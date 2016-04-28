@@ -1,5 +1,6 @@
 #include <linux/module.h>
 #include <linux/init.h>
+#include <linux/kernel.h>
 #include <linux/types.h>
 //#include <asm/cacheflush.h>
 #include <linux/syscalls.h>
@@ -7,8 +8,11 @@
 #include <linux/sched.h>
 #include <linux/version.h>
 
-// Write Protect Bit (CR0:16)
 #define CR0_WP 0x00010000 
+
+static char msg[128];
+static int len = 0;
+static int len_check = 1;
 
 MODULE_LICENSE("GPL");
 
@@ -16,7 +20,7 @@ void **syscall_table;
 
 unsigned long **find_sys_call_table(void);
 
-long (*orig_sys_setreuid)(uid_t ruid, uid_t euid);
+long (*original_call)(const char *, int, int);
 
 
 unsigned long **find_sys_call_table()
@@ -38,12 +42,40 @@ unsigned long **find_sys_call_table()
     return NULL;
 }
 
-int user_monitor(uid_t ruid, uid_t euid)
+/* -------- file monitoring --------- */
+int user_open(const char *filename, int flags, int mode)
 {
-    
+    printk(KERN_INFO "%s\n(pid:%d) is opening %s.\n ", filename, current->pid, d_path(&current->mm->exe_file->f_path, msg, 128));
 
-    return orig_sys_setreuid(ruid, euid);
+    return original_call(filename, flags, mode);
 }
+
+int user_read(struct file *sp_file,char __user *buf, size_t size, loff_t *offset)
+{
+
+    if (len_check)
+     len_check = 0;
+    else 
+    {
+        len_check = 1;
+        return 0;
+    }
+
+    printk(KERN_INFO "proc called read %d\n",size);
+    copy_to_user(buf,msg,len);
+    return len;
+}
+
+int user_write(struct file *sp_file, const char __user *buf, size_t size, loff_t *offset)
+{
+
+    printk(KERN_INFO "proc called write %d\n",size);
+    len = size;
+    copy_from_user(msg,buf,len);
+    return len;
+}
+
+/* -------- end file monitoring --------- */
 
 static int __init syscall_init(void)
 {
@@ -63,9 +95,8 @@ static int __init syscall_init(void)
     cr0 = read_cr0();
     write_cr0(cr0 & ~CR0_WP);
 
-    printk(KERN_INFO "Houston! We have full write access to all pages. Proceeding...\n");
-    orig_sys_setreuid = syscall_table[__NR_setreuid];
-    syscall_table[__NR_setreuid] = user_monitor;
+    original_call = syscall_table[__NR_open];
+    syscall_table[__NR_open] = user_open;
 
     write_cr0(cr0);
   
@@ -81,7 +112,7 @@ static void __exit syscall_release(void)
     cr0 = read_cr0();
     write_cr0(cr0 & ~CR0_WP);
     
-    syscall_table[__NR_setreuid] = orig_sys_setreuid;
+    syscall_table[__NR_open] = original_call;
         
     write_cr0(cr0);
 }
