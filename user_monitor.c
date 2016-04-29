@@ -7,12 +7,12 @@
 #include <linux/delay.h> 
 #include <linux/sched.h>
 #include <linux/version.h>
+#include <linux/file.h>
 
 #define CR0_WP 0x00010000 
+#define BUFLEN 128
 
-static char msg[128];
-static int len = 0;
-static int len_check = 1;
+static char msg[BUFLEN];
 
 MODULE_LICENSE("GPL");
 
@@ -20,7 +20,9 @@ void **syscall_table;
 
 unsigned long **find_sys_call_table(void);
 
-long (*original_call)(const char *, int, int);
+long (*original_open_call)(const char *, int, int);
+long (*original_read_call)(int, const void *, size_t);
+long (*original_write_call)(int, const void *, size_t);
 
 
 unsigned long **find_sys_call_table()
@@ -45,34 +47,24 @@ unsigned long **find_sys_call_table()
 /* -------- file monitoring --------- */
 int user_open(const char *filename, int flags, int mode)
 {
-    printk(KERN_INFO "%s\n(pid:%d) is opening %s.\n ", filename, current->pid, d_path(&current->mm->exe_file->f_path, msg, 128));
-
-    return original_call(filename, flags, mode);
+    printk(KERN_INFO "%s (pid:%d) is opening %s\n", filename, current->pid, d_path(&current->mm->exe_file->f_path, msg, BUFLEN));
+    return original_open_call(filename, flags, mode);
 }
 
-int user_read(struct file *sp_file,char __user *buf, size_t size, loff_t *offset)
+int user_read(int fd, const void *buf, size_t count)
 {
-
-    if (len_check)
-     len_check = 0;
-    else 
-    {
-        len_check = 1;
-        return 0;
-    }
-
-    printk(KERN_INFO "proc called read %d\n",size);
-    copy_to_user(buf,msg,len);
-    return len;
+    const char * exec_file = d_path(&current->mm->exe_file->f_path, msg, BUFLEN);
+    const char * read_file = d_path(&(fget(fd)->f_path), msg, BUFLEN);
+    printk(KERN_INFO "%s (pid:%d) is reading %d bytes from %s\n", read_file, current->pid, (int)count, exec_file);
+    return original_read_call(fd, buf, count);
 }
 
-int user_write(struct file *sp_file, const char __user *buf, size_t size, loff_t *offset)
+int user_write(int fd, const void *buf, size_t count)
 {
-
-    printk(KERN_INFO "proc called write %d\n",size);
-    len = size;
-    copy_from_user(msg,buf,len);
-    return len;
+    const char * exec_file = d_path(&current->mm->exe_file->f_path, msg, BUFLEN);
+    const char * write_file = d_path(&(fget(fd)->f_path), msg, BUFLEN);
+    printk(KERN_INFO "%s (pid:%d) is writing %d butes to %s\n", write_file, current->pid, (int)count, exec_file);
+    return original_write_call(fd, buf, count);
 }
 
 /* -------- end file monitoring --------- */
@@ -80,9 +72,6 @@ int user_write(struct file *sp_file, const char __user *buf, size_t size, loff_t
 static int __init syscall_init(void)
 {
     unsigned long cr0;
-
-    printk(KERN_INFO "Let's do some magic!\n");
-
     syscall_table = (void **) find_sys_call_table();
 
     if (! syscall_table) {
@@ -95,8 +84,14 @@ static int __init syscall_init(void)
     cr0 = read_cr0();
     write_cr0(cr0 & ~CR0_WP);
 
-    original_call = syscall_table[__NR_open];
+    original_open_call = syscall_table[__NR_open];
     syscall_table[__NR_open] = user_open;
+
+    original_read_call = syscall_table[__NR_read];
+    syscall_table[__NR_read] = user_read;
+
+    original_write_call = syscall_table[__NR_write];
+    syscall_table[__NR_write] = user_write;
 
     write_cr0(cr0);
   
@@ -112,7 +107,9 @@ static void __exit syscall_release(void)
     cr0 = read_cr0();
     write_cr0(cr0 & ~CR0_WP);
     
-    syscall_table[__NR_open] = original_call;
+    syscall_table[__NR_open] = original_open_call;
+    syscall_table[__NR_read] = original_read_call;
+    syscall_table[__NR_write] = original_write_call;
         
     write_cr0(cr0);
 }
