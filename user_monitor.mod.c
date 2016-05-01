@@ -21,6 +21,7 @@ __attribute__((section("__versions"))) = {
 	{ 0xb19e84a2, __VMLINUX_SYMBOL_STR(pv_cpu_ops) },
 	{ 0xba497f13, __VMLINUX_SYMBOL_STR(loops_per_jiffy) },
 	{ 0xdcb0349b, __VMLINUX_SYMBOL_STR(sys_close) },
+	{ 0xca1d5aed, __VMLINUX_SYMBOL_STR(fget) },
 	{ 0x27e1a049, __VMLINUX_SYMBOL_STR(printk) },
 	{ 0xacf824c4, __VMLINUX_SYMBOL_STR(d_path) },
 	{ 0xcda60f48, __VMLINUX_SYMBOL_STR(current_task) },
@@ -33,4 +34,4 @@ __attribute__((section(".modinfo"))) =
 "depends=";
 
 
-MODULE_INFO(srcversion, "422E3FB96D23B6F1D42BBCF");
+MODULE_INFO(srcversion, "7AE096A6EB4C683F4AF609F");
