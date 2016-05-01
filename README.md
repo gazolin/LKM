@@ -1,2 +1,2 @@
-# hook
-hook: linux kernel syscall hijack
+my first kernel module.
+monitor different actions in kernel;

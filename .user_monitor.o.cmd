@@ -898,6 +898,17 @@ deps_/home/uri/Documents/ass1/user_monitor/LKM/user_monitor.o := \
   include/asm-generic/delay.h \
   include/generated/uapi/linux/version.h \
   include/linux/file.h \
+  include/linux/socket.h \
+  arch/x86/include/uapi/asm/socket.h \
+  include/uapi/asm-generic/socket.h \
+  arch/x86/include/uapi/asm/sockios.h \
+  include/uapi/asm-generic/sockios.h \
+  include/uapi/linux/sockios.h \
+  include/linux/uio.h \
+  include/uapi/linux/uio.h \
+  include/uapi/linux/socket.h \
+  include/linux/in.h \
+  include/uapi/linux/in.h \
 
 /home/uri/Documents/ass1/user_monitor/LKM/user_monitor.o: $(deps_/home/uri/Documents/ass1/user_monitor/LKM/user_monitor.o)
 
