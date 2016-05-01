@@ -54,7 +54,7 @@ unsigned long **find_sys_call_table()
 }
 
 /* -------- file monitoring --------- */
-/*int user_open(const char *filename, int flags, int mode)
+int user_open(const char *filename, int flags, int mode)
 {
     printk(KERN_INFO "%s (pid:%d) is opening %s", filename, current->pid, d_path(&current->mm->exe_file->f_path, msg, BUFLEN));
     return original_open_call(filename, flags, mode);
@@ -76,13 +76,13 @@ int user_write(int fd, const void *buf, size_t count)
 
     printk(KERN_INFO "%s (pid:%d) is writing %d butes to %s", write_file, current->pid, (int)count, exec_file);
     return original_write_call(fd, buf, count);
-}*/
+}
 
 /* -------- end file monitoring --------- */
 
 /* -------- socket monitoring --------- */
 
-/*int user_connect(int sockfd, const struct sockaddr *addr, int addrLen)
+int user_connect(int sockfd, const struct sockaddr *addr, int addrLen)
 {
 
     const char * exec_file = d_path(&current->mm->exe_file->f_path, msg, BUFLEN);
@@ -96,7 +96,7 @@ int user_write(int fd, const void *buf, size_t count)
     }
 
     return original_connect_call(sockfd, addr, addrLen);
-}*/
+}
 int user_bind(int sockfd, const struct sockaddr *addr, int addrLen)
 {
     struct sockaddr_in * sina = (struct sockaddr_in *) addr;
@@ -158,7 +158,7 @@ static int __init syscall_init(void)
     cr0 = read_cr0();
     write_cr0(cr0 & ~CR0_WP);
 
-  /*  original_open_call = syscall_table[__NR_open];
+    original_open_call = syscall_table[__NR_open];
     syscall_table[__NR_open] = user_open;
 
     original_read_call = syscall_table[__NR_read];
@@ -174,7 +174,7 @@ static int __init syscall_init(void)
     syscall_table[__NR_bind] = user_bind; 
 
     original_listen_call = syscall_table[__NR_listen];
-    syscall_table[__NR_listen] = user_listen; */
+    syscall_table[__NR_listen] = user_listen; 
 
     original_mount_call = syscall_table[__NR_mount];
     syscall_table[__NR_mount] = user_mount; 
@@ -194,12 +194,12 @@ static void __exit syscall_release(void)
     cr0 = read_cr0();
     write_cr0(cr0 & ~CR0_WP);
     
-/*  syscall_table[__NR_open] = original_open_call;
+    syscall_table[__NR_open] = original_open_call;
     syscall_table[__NR_read] = original_read_call;
     syscall_table[__NR_write] = original_write_call;
     syscall_table[__NR_connect] = original_connect_call;
     syscall_table[__NR_bind] = original_bind_call;
-    syscall_table[__NR_listen] = original_listen_call;*/
+    syscall_table[__NR_listen] = original_listen_call;
     syscall_table[__NR_mount] = original_mount_call;
 
 
