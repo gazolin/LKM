@@ -909,6 +909,14 @@ deps_/home/uri/Documents/ass1/user_monitor/LKM/user_monitor.o := \
   include/uapi/linux/socket.h \
   include/linux/in.h \
   include/uapi/linux/in.h \
+  include/linux/proc_fs.h \
+  include/linux/buffer_head.h \
+  include/linux/pagemap.h \
+  include/linux/highmem.h \
+  arch/x86/include/asm/cacheflush.h \
+    $(wildcard include/config/debug/rodata/test.h) \
+  include/asm-generic/cacheflush.h \
+  include/linux/hugetlb_inline.h \
 
 /home/uri/Documents/ass1/user_monitor/LKM/user_monitor.o: $(deps_/home/uri/Documents/ass1/user_monitor/LKM/user_monitor.o)
 

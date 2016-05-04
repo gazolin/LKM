@@ -9,6 +9,12 @@
 #include <linux/file.h>
 #include <linux/socket.h>
 #include <linux/in.h>
+#include <linux/proc_fs.h>
+#include <linux/fs.h>
+#include <asm/segment.h>
+#include <asm/uaccess.h>
+#include <linux/buffer_head.h>
+//#include <asm-generic/uaccess.h>
 
 #define CR0_WP 0x00010000 
 #define BUFLEN 128
@@ -18,6 +24,11 @@ static int is_tcp = 0;
 static int port = 0;
 static struct in_addr ip;
 static int last_sockfd = 0;
+static int len = 0;
+static int len_check = 1;
+static int is_fileMon = 1;
+static int is_netMon = 1;
+static int is_mountMon = 1;
 
 MODULE_LICENSE("GPL");
 
@@ -53,10 +64,63 @@ unsigned long **find_sys_call_table()
     return NULL;
 }
 
+/* -------- read and write from proc file ---------*/
+int proc_read(struct file *sp_file,char __user *buf, size_t size, loff_t *offset)
+{
+
+    if (len_check)
+     len_check = 0;
+    else 
+    {
+        len_check = 1;
+        return 0;
+    }
+
+    printk(KERN_INFO "proc called read %d\n",size);
+    copy_to_user(buf,msg,len);
+    return len;
+}
+
+int proc_write(struct file *sp_file,const char __user *buf, size_t size, loff_t *offset)
+{
+    
+
+    printk(KERN_INFO "proc called write %d\n",size);
+    len = size;
+
+    //change configuration values
+    if (buf[8] == '0')
+        is_fileMon = 0;
+    if (buf[8] == '1')
+        is_fileMon = 1;
+    if (buf[7] == '0')
+        is_netMon = 0;
+    if (buf[7] == '1')
+        is_netMon = 1;
+    if (buf[9] == '0')
+        is_mountMon = 0;
+    if (buf[9] == '1')
+        is_mountMon = 1;
+
+    copy_from_user(msg,buf,len);
+
+    printk(KERN_INFO "file_mon: %d net_mon: %d mount_mon: %d\n",is_fileMon, is_netMon, is_mountMon);
+    return len;
+}
+
+struct file_operations fops = {
+.read = proc_read,
+.write = proc_write
+};
+/* -------- end read and write from proc file ---------*/
+
 /* -------- file monitoring --------- */
 int user_open(const char *filename, int flags, int mode)
 {
-    printk(KERN_INFO "%s (pid:%d) is opening %s", filename, current->pid, d_path(&current->mm->exe_file->f_path, msg, BUFLEN));
+    if (is_fileMon)
+    {
+        printk(KERN_INFO "%s (pid:%d) is opening %s", filename, current->pid, d_path(&current->mm->exe_file->f_path, msg, BUFLEN));
+    }
     return original_open_call(filename, flags, mode);
 }
 
@@ -65,7 +129,10 @@ int user_read(int fd, const void *buf, size_t count)
     const char * exec_file = d_path(&current->mm->exe_file->f_path, msg, BUFLEN);
     const char * read_file = d_path(&(fget(fd)->f_path), msg, BUFLEN);
 
-    printk(KERN_INFO "%s (pid:%d) is reading %d bytes from %s", read_file, current->pid, (int)count, exec_file);
+    if (is_fileMon)
+    {
+        printk(KERN_INFO "%s (pid:%d) is reading %d bytes from %s", read_file, current->pid, (int)count, exec_file);
+    }
     return original_read_call(fd, buf, count);
 }
 
@@ -74,14 +141,15 @@ int user_write(int fd, const void *buf, size_t count)
     const char * exec_file = d_path(&current->mm->exe_file->f_path, msg, BUFLEN);
     const char * write_file = d_path(&(fget(fd)->f_path), msg, BUFLEN);
 
-    printk(KERN_INFO "%s (pid:%d) is writing %d butes to %s", write_file, current->pid, (int)count, exec_file);
+    if (is_fileMon)
+    {
+        printk(KERN_INFO "%s (pid:%d) is writing %d butes to %s", write_file, current->pid, (int)count, exec_file);
+    }
     return original_write_call(fd, buf, count);
 }
-
 /* -------- end file monitoring --------- */
 
 /* -------- socket monitoring --------- */
-
 int user_connect(int sockfd, const struct sockaddr *addr, int addrLen)
 {
 
@@ -90,7 +158,7 @@ int user_connect(int sockfd, const struct sockaddr *addr, int addrLen)
     int port = ntohs(sina->sin_port);
     struct in_addr ip = sina->sin_addr;
 
-    if (addr->sa_family == AF_INET) //TCP, UDP, etc.
+    if (addr->sa_family == AF_INET && is_netMon) //TCP, UDP, etc.
     {
         printk(KERN_INFO "%s (pid:%d) recieved a connection from %pI4:%d\n", exec_file, current->pid, &ip, port);
     }
@@ -100,7 +168,6 @@ int user_connect(int sockfd, const struct sockaddr *addr, int addrLen)
 int user_bind(int sockfd, const struct sockaddr *addr, int addrLen)
 {
     struct sockaddr_in * sina = (struct sockaddr_in *) addr;
-
     //save to use when listen is called
     port = ntohs(sina->sin_port);
     ip = sina->sin_addr;
@@ -116,31 +183,32 @@ int user_bind(int sockfd, const struct sockaddr *addr, int addrLen)
 /* couldn't find ip and port directly, 
    will use sockfd to compare the bind syscall with the listen syscalls 
    and use the params from the bind action */
-
 int user_listen(int sockfd, int backlog)
 {
     const char * exec_file = d_path(&current->mm->exe_file->f_path, msg, BUFLEN);
-    if (sockfd == last_sockfd && is_tcp) //TCP, UDP, etc. also test the sockfd
+
+    if (sockfd == last_sockfd && is_tcp && is_netMon) //TCP, UDP, etc. also test the sockfd
     {
         printk(KERN_INFO "%s (pid:%d) is listening to %pI4:%d\n", exec_file, current->pid, &ip, port);
     }
 
     return original_listen_call(sockfd, backlog);
 }
-
 /* -------- end socket monitoring --------- */
 
 
 /* --------- mount monitoring ----------*/
-
 int user_mount (const char *source, const char *target, const char *filesystemtype, unsigned long mountflags, const void *data)
 {
     const char * exec_file = d_path(&current->mm->exe_file->f_path, msg, BUFLEN);
-    printk(KERN_INFO "%s (pid:%d) mounted %s to %s using %s\n", exec_file, current->pid, source, target, filesystemtype);
+
+    if (is_mountMon)
+    {
+        printk(KERN_INFO "%s (pid:%d) mounted %s to %s using %s\n", exec_file, current->pid, source, target, filesystemtype);
+    }
     
     return original_mount_call(source, target, filesystemtype, mountflags, data);
 }
-
 /* -------- end mount monitoring --------*/
 
 static int __init syscall_init(void)
@@ -158,16 +226,17 @@ static int __init syscall_init(void)
     cr0 = read_cr0();
     write_cr0(cr0 & ~CR0_WP);
 
-    original_open_call = syscall_table[__NR_open];
+/* ------- change syscall table --------*/
+    /*original_open_call = syscall_table[__NR_open];
     syscall_table[__NR_open] = user_open;
 
     original_read_call = syscall_table[__NR_read];
     syscall_table[__NR_read] = user_read;
 
     original_write_call = syscall_table[__NR_write];
-    syscall_table[__NR_write] = user_write;
+    syscall_table[__NR_write] = user_write;*/
 
-   original_connect_call = syscall_table[__NR_connect];
+    original_connect_call = syscall_table[__NR_connect];
     syscall_table[__NR_connect] = user_connect;
 
     original_bind_call = syscall_table[__NR_bind];
@@ -178,35 +247,39 @@ static int __init syscall_init(void)
 
     original_mount_call = syscall_table[__NR_mount];
     syscall_table[__NR_mount] = user_mount; 
-
+/* ------- end change syscall table ------------*/
 
     write_cr0(cr0);
-  
+
+/* ------- init proc file ------------*/
+    printk(KERN_INFO "init KMonitor\n");
+    if (! proc_create("KMonitor",0666,NULL,&fops)) 
+    {
+        printk(KERN_INFO "ERROR! proc_create\n");
+        remove_proc_entry("KMonitor",NULL);
+        return -1;
+    }
+/* ------- end init proc file ------------*/
     return 0;
 }
 
 static void __exit syscall_release(void)
 {
     unsigned long cr0;
-
-    printk(KERN_INFO "byebye!\n");
-
     cr0 = read_cr0();
     write_cr0(cr0 & ~CR0_WP);
     
-    syscall_table[__NR_open] = original_open_call;
+   /* syscall_table[__NR_open] = original_open_call;
     syscall_table[__NR_read] = original_read_call;
-    syscall_table[__NR_write] = original_write_call;
+    syscall_table[__NR_write] = original_write_call;*/
     syscall_table[__NR_connect] = original_connect_call;
     syscall_table[__NR_bind] = original_bind_call;
     syscall_table[__NR_listen] = original_listen_call;
     syscall_table[__NR_mount] = original_mount_call;
-
-
-
-
-        
     write_cr0(cr0);
+
+    remove_proc_entry("KMonitor",NULL);
+    printk(KERN_INFO "byebye!\n");
 }
 
 module_init(syscall_init);
