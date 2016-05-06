@@ -1,8 +1,8 @@
-cmd_/home/uri/Documents/ass1/user_monitor/LKM/user_monitor.o := gcc -Wp,-MD,/home/uri/Documents/ass1/user_monitor/LKM/.user_monitor.o.d  -nostdinc -isystem /usr/lib/gcc/x86_64-linux-gnu/4.8/include  -I./arch/x86/include -Iarch/x86/include/generated/uapi -Iarch/x86/include/generated  -Iinclude -I./arch/x86/include/uapi -Iarch/x86/include/generated/uapi -I./include/uapi -Iinclude/generated/uapi -include ./include/linux/kconfig.h -Iubuntu/include  -D__KERNEL__ -Wall -Wundef -Wstrict-prototypes -Wno-trigraphs -fno-strict-aliasing -fno-common -Werror-implicit-function-declaration -Wno-format-security -std=gnu89 -m64 -mno-80387 -mno-fp-ret-in-387 -mtune=generic -mno-red-zone -mcmodel=kernel -funit-at-a-time -maccumulate-outgoing-args -DCONFIG_X86_X32_ABI -DCONFIG_AS_CFI=1 -DCONFIG_AS_CFI_SIGNAL_FRAME=1 -DCONFIG_AS_CFI_SECTIONS=1 -DCONFIG_AS_FXSAVEQ=1 -DCONFIG_AS_CRC32=1 -DCONFIG_AS_AVX=1 -DCONFIG_AS_AVX2=1 -pipe -Wno-sign-compare -fno-asynchronous-unwind-tables -mno-sse -mno-mmx -mno-sse2 -mno-3dnow -mno-avx -fno-delete-null-pointer-checks -O2 --param=allow-store-data-races=0 -Wframe-larger-than=1024 -fstack-protector -Wno-unused-but-set-variable -fno-omit-frame-pointer -fno-optimize-sibling-calls -fno-var-tracking-assignments -pg -mfentry -DCC_USING_FENTRY -Wdeclaration-after-statement -Wno-pointer-sign -fno-strict-overflow -fconserve-stack -Werror=implicit-int -Werror=strict-prototypes -DCC_HAVE_ASM_GOTO  -DMODULE  -D"KBUILD_STR(s)=\#s" -D"KBUILD_BASENAME=KBUILD_STR(user_monitor)"  -D"KBUILD_MODNAME=KBUILD_STR(user_monitor)" -c -o /home/uri/Documents/ass1/user_monitor/LKM/.tmp_user_monitor.o /home/uri/Documents/ass1/user_monitor/LKM/user_monitor.c
+cmd_/home/uri/Documents/ass1/LKM/user_monitor.o := gcc -Wp,-MD,/home/uri/Documents/ass1/LKM/.user_monitor.o.d  -nostdinc -isystem /usr/lib/gcc/x86_64-linux-gnu/4.8/include  -I./arch/x86/include -Iarch/x86/include/generated/uapi -Iarch/x86/include/generated  -Iinclude -I./arch/x86/include/uapi -Iarch/x86/include/generated/uapi -I./include/uapi -Iinclude/generated/uapi -include ./include/linux/kconfig.h -Iubuntu/include  -D__KERNEL__ -Wall -Wundef -Wstrict-prototypes -Wno-trigraphs -fno-strict-aliasing -fno-common -Werror-implicit-function-declaration -Wno-format-security -std=gnu89 -m64 -mno-80387 -mno-fp-ret-in-387 -mtune=generic -mno-red-zone -mcmodel=kernel -funit-at-a-time -maccumulate-outgoing-args -DCONFIG_X86_X32_ABI -DCONFIG_AS_CFI=1 -DCONFIG_AS_CFI_SIGNAL_FRAME=1 -DCONFIG_AS_CFI_SECTIONS=1 -DCONFIG_AS_FXSAVEQ=1 -DCONFIG_AS_CRC32=1 -DCONFIG_AS_AVX=1 -DCONFIG_AS_AVX2=1 -pipe -Wno-sign-compare -fno-asynchronous-unwind-tables -mno-sse -mno-mmx -mno-sse2 -mno-3dnow -mno-avx -fno-delete-null-pointer-checks -O2 --param=allow-store-data-races=0 -Wframe-larger-than=1024 -fstack-protector -Wno-unused-but-set-variable -fno-omit-frame-pointer -fno-optimize-sibling-calls -fno-var-tracking-assignments -pg -mfentry -DCC_USING_FENTRY -Wdeclaration-after-statement -Wno-pointer-sign -fno-strict-overflow -fconserve-stack -Werror=implicit-int -Werror=strict-prototypes -DCC_HAVE_ASM_GOTO  -DMODULE  -D"KBUILD_STR(s)=\#s" -D"KBUILD_BASENAME=KBUILD_STR(user_monitor)"  -D"KBUILD_MODNAME=KBUILD_STR(user_monitor)" -c -o /home/uri/Documents/ass1/LKM/.tmp_user_monitor.o /home/uri/Documents/ass1/LKM/user_monitor.c
 
-source_/home/uri/Documents/ass1/user_monitor/LKM/user_monitor.o := /home/uri/Documents/ass1/user_monitor/LKM/user_monitor.c
+source_/home/uri/Documents/ass1/LKM/user_monitor.o := /home/uri/Documents/ass1/LKM/user_monitor.c
 
-deps_/home/uri/Documents/ass1/user_monitor/LKM/user_monitor.o := \
+deps_/home/uri/Documents/ass1/LKM/user_monitor.o := \
   include/linux/module.h \
     $(wildcard include/config/sysfs.h) \
     $(wildcard include/config/modules.h) \
@@ -910,14 +910,16 @@ deps_/home/uri/Documents/ass1/user_monitor/LKM/user_monitor.o := \
   include/linux/in.h \
   include/uapi/linux/in.h \
   include/linux/proc_fs.h \
-  include/linux/buffer_head.h \
-  include/linux/pagemap.h \
-  include/linux/highmem.h \
-  arch/x86/include/asm/cacheflush.h \
-    $(wildcard include/config/debug/rodata/test.h) \
-  include/asm-generic/cacheflush.h \
-  include/linux/hugetlb_inline.h \
+  include/uapi/linux/times.h \
+  include/linux/rtc.h \
+    $(wildcard include/config/rtc/intf/dev/uie/emul.h) \
+    $(wildcard include/config/rtc/hctosys/device.h) \
+  include/linux/interrupt.h \
+    $(wildcard include/config/irq/forced/threading.h) \
+    $(wildcard include/config/generic/irq/probe.h) \
+  include/uapi/linux/rtc.h \
+  include/linux/cdev.h \
 
-/home/uri/Documents/ass1/user_monitor/LKM/user_monitor.o: $(deps_/home/uri/Documents/ass1/user_monitor/LKM/user_monitor.o)
+/home/uri/Documents/ass1/LKM/user_monitor.o: $(deps_/home/uri/Documents/ass1/LKM/user_monitor.o)
 
-$(deps_/home/uri/Documents/ass1/user_monitor/LKM/user_monitor.o):
+$(deps_/home/uri/Documents/ass1/LKM/user_monitor.o):
